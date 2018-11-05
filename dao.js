@@ -37,10 +37,16 @@ module.exports.login = (req, res) => {
                 msg: err.message
             });
         }
-        if (result) {
+        console.log(result);
+        if (result.length > 0) {
             console.log('Logged in');
             return res.json({
                 success: true
+            });
+        } else {
+            return res.json({
+               success: false,
+                msg: 'Invalid login'
             });
         }
     });
