@@ -114,6 +114,30 @@ module.exports.checkUser = (req, res) => {
     });
 };
 
+module.exports.getLocationById = (req, res) => {
+    const { loc_id } = req.body;
+    db.query(`SELECT * FROM location WHERE idLocation = '${loc_id}';`, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = Object.assign({}, result[0]);
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                location: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
+
 module.exports.addItem = (req, res) => {
     const { sDesc, fDesc, value, cat, comments, loc_id } = req.body;
     db.query(`INSERT INTO item (s_description, l_description, Value, Comments, location) VALUES ('${sDesc}', '${fDesc}', '${value}', '${comments}', '${loc_id}');`, err => {
