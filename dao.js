@@ -48,7 +48,7 @@ module.exports.login = (req, res) => {
                 msg: err.message
             });
         }
-        if (result[0].type === UserType.LOC_EMPLOYEE) {
+        if (result[0] && result[0].type === UserType.LOC_EMPLOYEE) {
             db.query(`SELECT * FROM location_employees WHERE email = '${email}';`, (err, resu) => {
                 if (err) {
                     return res.json({
