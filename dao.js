@@ -130,6 +130,29 @@ module.exports.addItem = (req, res) => {
     });
 };
 
+module.exports.getAllItems = (req, res) => {
+    db.query('SELECT * FROM item;', (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = result.map(obj => Object.assign({}, obj));
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                items: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
+
 module.exports.getItemsByLocation = (req, res) => {
     const { loc_id } = req.body;
     db.query(`SELECT * FROM item WHERE location = '${loc_id}';`, (err, result) => {
