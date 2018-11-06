@@ -201,6 +201,54 @@ module.exports.getItemsByLocation = (req, res) => {
     });
 };
 
+module.exports.getItemsByCategory = (req, res) => {
+    const { cat } = req.body;
+    db.query(`SELECT * FROM item WHERE category = '${cat}';`, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = result.map(obj => Object.assign({}, obj));
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                items: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
+
+module.exports.getItemsByName = (req, res) => {
+    const { sDesc } = req.body;
+    db.query(`SELECT * FROM item WHERE s_description = '${sDesc}';`, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = result.map(obj => Object.assign({}, obj));
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                items: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+}
+
 // module.exports.getUser = (req, res) => {
 //     const { email } = req.body;
 //     db.query(`SELECT * FROM users WHERE email = '${email}'`, (err, result) => {
