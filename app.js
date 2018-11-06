@@ -11,6 +11,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/register', dao.registerUser);
 app.post('/login', dao.login);
+app.post('/checkUser', dao.checkUser);
+app.post('/addItem', dao.addItem);
+app.post('/location/getItems', dao.getItemsByLocation);
 
 app.get('/', function(req, res, next) {
     res.render('index', { title: 'Express' });

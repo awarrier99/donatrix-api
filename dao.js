@@ -3,7 +3,12 @@ const UserType = require('./UserType');
 
 module.exports.registerUser = (req, res) => {
     const { email, password, locked, name, type } = req.body;
-    db.query(`INSERT INTO users (email, password, locked, name) VALUES ('${email}', '${password}', '${locked}', '${name}');`, err => {
+    let loc_id = null;
+    const loc = type === UserType.LOC_EMPLOYEE;
+    if (loc) {
+        loc_id = req.body.loc_id;
+    }
+    const query = db.query(`INSERT INTO users (email, password, locked, name, type) VALUES ('${email}', '${password}', '${locked}', '${name}', '${type}');`, err => {
         if (err) {
             return res.json({
                 success: false,
@@ -13,41 +18,163 @@ module.exports.registerUser = (req, res) => {
     });
     if (type !== UserType.USER) {
         const table = `${type.toLowerCase()}s`;
-        db.query(`INSERT INTO ${table} (email, password) VALUES ('${email}', '${password}');`, err => {
-            if (err) {
+        const loc_col = loc ? ', location' : '';
+        const loc_value = loc ? `, '${loc_id}'` : '';
+        try {
+            db.query(`INSERT INTO ${table} (email, password${loc_col}) VALUES ('${email}', '${password}'${loc_value});`, err => {
+                if (err) {
+                    return res.json({
+                        success: false,
+                        msg: err.message
+                    });
+                }
+                console.log('1 user inserted');
                 return res.json({
-                    success: false,
-                    msg: err.message
+                    success: true,
                 });
-            }
-            console.log('1 user inserted');
-            return res.json({
-               success: true,
             });
-        });
+        } catch (err) {
+            console.log(err);
+        }
     }
 };
 
 module.exports.login = (req, res) => {
     const { email, password } = req.body;
-    db.query(`SELECT * FROM users WHERE email = '${email}' AND password = '${password}'`, (err, result) => {
+    db.query(`SELECT * FROM users WHERE email = '${email}' AND password = '${password}';`, (err, result) => {
         if (err) {
             return res.json({
                 success: false,
                 msg: err.message
             });
         }
-        console.log(result);
+        if (result[0].type === UserType.LOC_EMPLOYEE) {
+            db.query(`SELECT * FROM location_employees WHERE email = '${email}';`, (err, resu) => {
+                if (err) {
+                    return res.json({
+                        success: false,
+                        msg: err.message
+                    });
+                }
+                result[0].loc_id = resu[0].location;
+                const jsonResult = Object.assign({}, result[0]);
+                console.log(jsonResult);
+                if (result.length > 0) {
+                    console.log('Logged in');
+                    return res.json({
+                        success: true,
+                        user: jsonResult
+                    });
+                } else {
+                    return res.json({
+                        success: false,
+                        msg: 'Invalid login'
+                    });
+                }
+            });
+        } else {
+            const jsonResult = Object.assign({}, result[0]);
+            console.log(jsonResult);
+            if (result.length > 0) {
+                console.log('Logged in');
+                return res.json({
+                    success: true,
+                    user: jsonResult
+                });
+            } else {
+                return res.json({
+                    success: false,
+                    msg: 'Invalid login'
+                });
+            }
+        }
+    });
+};
+
+module.exports.checkUser = (req, res) => {
+    const { email } = req.body;
+    db.query(`SELECT * FROM users WHERE email = '${email}';`, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = Object.assign({}, result[0]);
+        console.log(jsonResult);
         if (result.length > 0) {
-            console.log('Logged in');
             return res.json({
                 success: true
             });
         } else {
             return res.json({
-               success: false,
-                msg: 'Invalid login'
+                success: false
             });
         }
     });
 };
+
+module.exports.addItem = (req, res) => {
+    const { sDesc, fDesc, value, cat, comments, loc_id } = req.body;
+    db.query(`INSERT INTO item (s_description, l_description, Value, Comments, location) VALUES ('${sDesc}', '${fDesc}', '${value}', '${comments}', '${loc_id}');`, err => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        console.log('1 item inserted');
+        return res.json({
+            success: true
+        });
+    });
+};
+
+module.exports.getItemsByLocation = (req, res) => {
+    const { loc_id } = req.body;
+    db.query(`SELECT * FROM item WHERE location = '${loc_id}';`, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = result.map(obj => Object.assign({}, obj));
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                items: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
+
+// module.exports.getUser = (req, res) => {
+//     const { email } = req.body;
+//     db.query(`SELECT * FROM users WHERE email = '${email}'`, (err, result) => {
+//         if (err) {
+//             return res.json({
+//                 success: false,
+//                 msg: err.message
+//             });
+//         }
+//         console.log(result);
+//         if (result.length > 0) {
+//             console.log('Logged in');
+//             return res.json({
+//                 success: true,
+//             });
+//         } else {
+//             return res.json({
+//                 success: false,
+//                 msg: 'Invalid login'
+//             });
+//         }
+//     });
+// };
+// };
