@@ -18,6 +18,7 @@ app.post('/location', dao.getLocationById);
 app.post('/location/getItems', dao.getItemsByLocation);
 app.post('/category/getItems', dao.getItemsByCategory);
 app.post('/name/getItems', dao.getItemsByName);
+app.post('/filtered/getItems', dao.getItemsByMultiple);
 
 app.get('/', function(req, res, next) {
     res.render('index', { title: 'Express' });

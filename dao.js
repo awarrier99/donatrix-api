@@ -247,7 +247,53 @@ module.exports.getItemsByName = (req, res) => {
             });
         }
     });
-}
+};
+
+module.exports.getItemsByMultiple = (req, res) => {
+    const { loc_id, cat, sDesc } = req.body;
+    const byLoc = loc_id !== undefined;
+    const byCat = cat !== undefined;
+    const byName = sDesc !== undefined;
+
+    const locClause = byLoc ? `location = '${loc_id}'` : '';
+    let catClause = byCat ? `category = '${cat}'` : '';
+    if (byLoc && byCat) {
+        catClause = ' AND '.concat(catClause);
+    }
+    let nameClause = byName ? `s_description = '${sDesc}'` : '';
+    if ((byLoc && byName) || (byCat && byName)) {
+        nameClause = ' AND '.concat(nameClause);
+    }
+
+    let query = '';
+    if (!byLoc && !byCat && !byName) {
+        query = 'SELECT * FROM item;';
+    } else {
+        query = `SELECT * FROM item WHERE ${locClause}${catClause}${nameClause};`;
+    }
+    console.log(query);
+
+    db.query(query, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = result.map(obj => Object.assign({}, obj));
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                items: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
 
 // module.exports.getUser = (req, res) => {
 //     const { email } = req.body;
