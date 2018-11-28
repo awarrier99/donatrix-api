@@ -122,19 +122,15 @@ module.exports.getLocations = (req, res) => {
                 msg: err.message
             });
         }
-        const mapToKey = loc => {
-            const id = loc.idLocation;
-            const obj = {};
-            obj[id] = Object.assign({}, loc);
-            return obj;
+        const mapToNormalObject = loc => {
+            return Object.assign({}, loc);
         };
-        console.log(result.map(mapToKey));
-        const jsonResult = Object.assign({}, ...result.map(mapToKey));
+        const jsonResult = result.map(mapToNormalObject);
         console.log(jsonResult);
         if (result.length > 0) {
             return res.json({
                 success: true,
-                location: jsonResult
+                locations: jsonResult
             });
         } else {
             return res.json({
