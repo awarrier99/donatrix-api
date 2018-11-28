@@ -14,6 +14,7 @@ app.post('/login', dao.login);
 app.post('/checkUser', dao.checkUser);
 app.post('/addItem', dao.addItem);
 app.get('/allItems', dao.getAllItems);
+app.get('/locations', dao.getLocations);
 app.post('/location', dao.getLocationById);
 app.post('/location/getItems', dao.getItemsByLocation);
 app.post('/category/getItems', dao.getItemsByCategory);

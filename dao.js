@@ -114,6 +114,36 @@ module.exports.checkUser = (req, res) => {
     });
 };
 
+module.exports.getLocations = (req, res) => {
+    db.query('SELECT * FROM location;', (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const mapToKey = loc => {
+            const id = loc.idLocation;
+            const obj = {};
+            obj[id] = Object.assign({}, loc);
+            return obj;
+        };
+        console.log(result.map(mapToKey));
+        const jsonResult = Object.assign({}, ...result.map(mapToKey));
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                location: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
+
 module.exports.getLocationById = (req, res) => {
     const { loc_id } = req.body;
     db.query(`SELECT * FROM location WHERE idLocation = '${loc_id}';`, (err, result) => {
