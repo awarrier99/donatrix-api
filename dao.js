@@ -166,7 +166,7 @@ module.exports.getLocationById = (req, res) => {
 
 module.exports.addItem = (req, res) => {
     const { sDesc, fDesc, value, cat, comments, loc_id } = req.body;
-    db.query(`INSERT INTO item (s_description, l_description, Value, Comments, location) VALUES ('${sDesc}', '${fDesc}', '${value}', '${comments}', '${loc_id}');`, err => {
+    db.query(`INSERT INTO item (s_description, l_description, Value, Comments, category, location) VALUES ('${sDesc}', '${fDesc}', '${value}', '${comments}', ${cat}, '${loc_id}');`, err => {
         if (err) {
             return res.json({
                 success: false,
