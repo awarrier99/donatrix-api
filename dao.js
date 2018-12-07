@@ -180,6 +180,22 @@ module.exports.addItem = (req, res) => {
     });
 };
 
+module.exports.updateItem = (req, res) => {
+    const { sDesc, fDesc, value, cat, comments, loc_id, item_id } = req.body;
+    db.query(`UPDATE item SET s_description = '${sDesc}', l_description = '${fDesc}', Value = '${value}', Comments = '${comments}', category = '${cat}', location = '${loc_id}' WHERE idItem = '${item_id}';`, err => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        console.log('1 item updated');
+        return res.json({
+            success: true
+        });
+    });
+};
+
 module.exports.getAllItems = (req, res) => {
     db.query('SELECT * FROM item;', (err, result) => {
         if (err) {
