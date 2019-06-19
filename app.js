@@ -9,18 +9,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.post('/viewBill', dao.viewBill);
+app.post('/viewUsage', dao.viewUsage);
+app.post('/payBill', dao.payBill);
+app.post('/viewUserInfo', dao.viewUserInfo);
 app.post('/register', dao.registerUser);
-app.post('/login', dao.login);
-app.post('/checkUser', dao.checkUser);
-app.post('/addItem', dao.addItem);
-app.patch('/updateItem', dao.updateItem);
-app.get('/allItems', dao.getAllItems);
-app.get('/locations', dao.getLocations);
-app.post('/location', dao.getLocationById);
-app.post('/location/getItems', dao.getItemsByLocation);
-app.post('/category/getItems', dao.getItemsByCategory);
-app.post('/name/getItems', dao.getItemsByName);
-app.post('/filtered/getItems', dao.getItemsByMultiple);
+app.post('/deleteUser', dao.deleteUser);
+app.get('/viewAllUsers', dao.viewAllUsers);
+app.post('/upgrade', dao.upgrade);
+app.post('/downgrade', dao.downgrade);
+app.post('/parentalControls', dao.toggleParentalControls);
+app.post('/setViewingPrefs', dao.setViewingPrefs);
+app.post('/setInterests', dao.setInterests);
+app.post('/login', dao.logIn);
+app.post('/logout', dao.logOut);
+app.post('/viewLocation', dao.viewLocation);
 
 app.get('/', function(req, res, next) {
     res.render('index', { title: 'Express' });
