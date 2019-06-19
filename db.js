@@ -3,10 +3,10 @@ let connection;
 
 if (!connection) {
     connection = mysql.createConnection({
-        host: 'industrychallenge.cdzkywzuhila.us-east-1.rds.amazonaws.com',
-        user: 'davpoole1',
-        password: 'password',
-        database: 'industryChallenge'
+        host: 'fugfonv8odxxolj8.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
+        user: 'zt9hkjepquxofwhk',
+        password: 's8egkd5fxfaun44g',
+        database: 'zrhtlmqmzwf9iv7r'
     });
     connection.connect();
 }

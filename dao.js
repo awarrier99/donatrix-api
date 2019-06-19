@@ -1,9 +1,148 @@
 const db = require('./db');
-//const UserType = require('./UserType');
+const UserType = require('./UserType');
 
-module.exports.viewBill = (req, res) => {
-    const { idUser } = req.body;
-    db.query(`SELECT billAmount FROM User WHERE idUser = '${idUser}';`, (err, result) => {
+module.exports.registerUser = (req, res) => {
+    const { email, password, locked, name, type } = req.body;
+    let loc_id = null;
+    const loc = type === UserType.LOC_EMPLOYEE;
+    if (loc) {
+        loc_id = req.body.loc_id;
+    }
+    const query = db.query(`INSERT INTO users (email, password, locked, name, type) VALUES ('${email}', '${password}', '${locked}', '${name}', '${type}');`, err => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+    });
+    if (type !== UserType.USER) {
+        const table = `${type.toLowerCase()}s`;
+        const loc_col = loc ? ', location' : '';
+        const loc_value = loc ? `, '${loc_id}'` : '';
+        try {
+            db.query(`INSERT INTO ${table} (email, password${loc_col}) VALUES ('${email}', '${password}'${loc_value});`, err => {
+                if (err) {
+                    return res.json({
+                        success: false,
+                        msg: err.message
+                    });
+                }
+                console.log('1 user inserted');
+                return res.json({
+                    success: true,
+                });
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+};
+
+module.exports.login = (req, res) => {
+    const { email, password } = req.body;
+    db.query(`SELECT * FROM users WHERE email = '${email}' AND password = '${password}';`, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        if (result[0] && result[0].type === UserType.LOC_EMPLOYEE) {
+            db.query(`SELECT * FROM location_employees WHERE email = '${email}';`, (err, resu) => {
+                if (err) {
+                    return res.json({
+                        success: false,
+                        msg: err.message
+                    });
+                }
+                result[0].loc_id = resu[0].location;
+                const jsonResult = Object.assign({}, result[0]);
+                console.log(jsonResult);
+                if (result.length > 0) {
+                    console.log('Logged in');
+                    return res.json({
+                        success: true,
+                        user: jsonResult
+                    });
+                } else {
+                    return res.json({
+                        success: false,
+                        msg: 'Invalid login'
+                    });
+                }
+            });
+        } else {
+            const jsonResult = Object.assign({}, result[0]);
+            console.log(jsonResult);
+            if (result.length > 0) {
+                console.log('Logged in');
+                return res.json({
+                    success: true,
+                    user: jsonResult
+                });
+            } else {
+                return res.json({
+                    success: false,
+                    msg: 'Invalid login'
+                });
+            }
+        }
+    });
+};
+
+module.exports.checkUser = (req, res) => {
+    const { email } = req.body;
+    db.query(`SELECT * FROM users WHERE email = '${email}';`, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = Object.assign({}, result[0]);
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
+
+module.exports.getLocations = (req, res) => {
+    db.query('SELECT * FROM location;', (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const mapToNormalObject = loc => {
+            return Object.assign({}, loc);
+        };
+        const jsonResult = result.map(mapToNormalObject);
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                locations: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
+
+module.exports.getLocationById = (req, res) => {
+    const { loc_id } = req.body;
+    db.query(`SELECT * FROM location WHERE idLocation = '${loc_id}';`, (err, result) => {
         if (err) {
             return res.json({
                 success: false,
@@ -25,260 +164,200 @@ module.exports.viewBill = (req, res) => {
     });
 };
 
-module.exports.payBill = (req, res) => {
-  const { idUser } = req.body;
-  db.query(`UPDATE User SET billAmount = 0 WHERE idUser = '${idUser}';`, (err) => {
-    if (err) {
+module.exports.addItem = (req, res) => {
+    const { sDesc, fDesc, value, cat, comments, loc_id } = req.body;
+    db.query(`INSERT INTO item (s_description, l_description, Value, Comments, category, location) VALUES ('${sDesc}', '${fDesc}', '${value}', '${comments}', '${cat}', '${loc_id}');`, err => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        console.log('1 item inserted');
         return res.json({
-            success: false,
-            msg: err.message
-        });
-    } else {
-      return res.json({
-        success: true
-      })
-    }
-  });
-}
-
-module.exports.viewUsage = (req, res) => {
-    const { idUser } = req.body;
-    db.query(`SELECT usageAmount FROM User WHERE idUser = '${idUser}';`, (err, result) => {
-        if (err) {
-            return res.json({
-                success: false,
-                msg: err.message
-            });
-        }
-        const jsonResult = Object.assign({}, result[0]);
-        console.log(jsonResult);
-        if (result.length > 0) {
-            return res.json({
-                success: true,
-                info: jsonResult
-            });
-        } else {
-            return res.json({
-                success: false
-            });
-        }
-    });
-};
-
-module.exports.viewLocation = (req, res) => {
-    const { idUser } = req.body;
-    db.query(`SELECT location FROM User WHERE idUser = '${idUser}';`, (err, result) => {
-        if (err) {
-            return res.json({
-                success: false,
-                msg: err.message
-            });
-        }
-        const jsonResult = Object.assign({}, result[0]);
-        console.log(jsonResult);
-        if (result.length > 0) {
-            return res.json({
-                success: true,
-                info: jsonResult
-            });
-        } else {
-            return res.json({
-                success: false
-            });
-        }
-    });
-};
-
-module.exports.viewUserInfo = (req, res) => {
-    const { idUser } = req.body;
-    db.query(`SELECT * FROM User WHERE idUser = '${idUser}';`, (err, result) => {
-        if (err) {
-            return res.json({
-                success: false,
-                msg: err.message
-            });
-        }
-        const jsonResult = Object.assign({}, result[0]);
-        console.log(jsonResult);
-        if (result.length > 0) {
-            return res.json({
-                success: true,
-                info: jsonResult
-            });
-        } else {
-            return res.json({
-                success: false
-            });
-        }
-    });
-};
-
-module.exports.registerUser = (req, res) => {
-    const { idUser, billAmount, subStatus, usageAmount, parentalControls, viewingPrefs, interests, loggedIn, location } = req.body;
-    const query = db.query(`INSERT INTO User (idUser, billAmount, subStatus, usageAmount, parentalControls, viewingPrefs,
-      interests, loggedIn, location) VALUES ('${idUser}', '${billAmount}', '${subStatus}', '${usageAmount}',
-      '${parentalControls}', '${viewingPrefs}', '${interests}', '${loggedIn}', '${location}');`, err => {
-        if (err) {
-            return res.json({
-                success: false,
-                msg: err.message
-            });
-        } else {
-          return res.json({
             success: true
-          })
+        });
+    });
+};
+
+module.exports.updateItem = (req, res) => {
+    const { sDesc, fDesc, value, cat, comments, loc_id, item_id } = req.body;
+    db.query(`UPDATE item SET s_description = '${sDesc}', l_description = '${fDesc}', Value = '${value}', Comments = '${comments}', category = '${cat}', location = '${loc_id}' WHERE idItem = '${item_id}';`, err => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        console.log('1 item updated');
+        return res.json({
+            success: true
+        });
+    });
+};
+
+module.exports.getAllItems = (req, res) => {
+    db.query('SELECT * FROM item;', (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = result.map(obj => Object.assign({}, obj));
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                items: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
         }
     });
 };
 
-module.exports.deleteUser = (req, res) => {
-  const { idUser } = req.body;
-  const query = db.query(`DELETE FROM User WHERE idUser = '${idUser}'`, err => {
-    if (err) {
-        return res.json({
-            success: false,
-            msg: err.message
-        });
-    } else {
-      return res.json({
-        success: true
-      })
-    }
-  });
-}
-
-module.exports.viewAllUsers = (req, res) => {
-  const query = db.query(`SELECT * FROM User`, (err, result) => {
-    if (err) {
-        return res.json({
-            success: false,
-            msg: err.message
-        });
-    } else {
-      const jsonResult = Object.assign({}, result);
-      console.log(jsonResult);
-      if (result.length > 0) {
-          return res.json({
-              success: true,
-              info: jsonResult
-          });
-        } else {
-          return res.json({
-            success: false
-          });
+module.exports.getItemsByLocation = (req, res) => {
+    const { loc_id } = req.body;
+    db.query(`SELECT * FROM item WHERE location = '${loc_id}';`, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
         }
-    }
-  })
-}
+        const jsonResult = result.map(obj => Object.assign({}, obj));
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                items: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
 
-module.exports.upgrade = (req, res) => {
-  const { idUser } = req.body;
-  db.query(`UPDATE User SET subStatus = 'paid user' WHERE idUser = '${idUser}';`, (err) => {
-    if (err) {
-        return res.json({
-            success: false,
-            msg: err.message
-        });
-    } else {
-      return res.json({
-        success: true
-      })
-    }
-  });
-}
+module.exports.getItemsByCategory = (req, res) => {
+    const { cat } = req.body;
+    db.query(`SELECT * FROM item WHERE category = '${cat}';`, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = result.map(obj => Object.assign({}, obj));
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                items: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
 
-module.exports.downgrade = (req, res) => {
-  const { idUser } = req.body;
-  db.query(`UPDATE User SET subStatus = 'free user' WHERE idUser = '${idUser}';`, (err) => {
-    if (err) {
-        return res.json({
-            success: false,
-            msg: err.message
-        });
-    } else {
-      return res.json({
-        success: true
-      })
-    }
-  });
-}
+module.exports.getItemsByName = (req, res) => {
+    const { sDesc } = req.body;
+    db.query(`SELECT * FROM item WHERE s_description = '${sDesc}';`, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = result.map(obj => Object.assign({}, obj));
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                items: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
 
-module.exports.toggleParentalControls = (req, res) => {
-  const { idUser } = req.body;
-  db.query(`UPDATE User SET parentalControls = !parentalControls WHERE idUser = '${idUser}';`, (err) => {
-    if (err) {
-        return res.json({
-            success: false,
-            msg: err.message
-        });
-    } else {
-      return res.json({
-        success: true
-      })
-    }
-  });
-}
+module.exports.getItemsByMultiple = (req, res) => {
+    const { loc_id, cat, sDesc } = req.body;
+    const byLoc = loc_id !== undefined;
+    const byCat = cat !== undefined;
+    const byName = sDesc !== undefined;
 
-module.exports.setViewingPrefs = (req, res) => {
-  const { idUser, viewingPrefs } = req.body;
-  db.query(`UPDATE User SET viewingPrefs = '${viewingPrefs}' WHERE idUser = '${idUser}';`, (err) => {
-    if (err) {
-        return res.json({
-            success: false,
-            msg: err.message
-        });
-    } else {
-      return res.json({
-        success: true
-      })
+    const locClause = byLoc ? `location = '${loc_id}'` : '';
+    let catClause = byCat ? `category = '${cat}'` : '';
+    if (byLoc && byCat) {
+        catClause = ' AND '.concat(catClause);
     }
-  });
-}
+    let nameClause = byName ? `s_description = '${sDesc}'` : '';
+    if ((byLoc && byName) || (byCat && byName)) {
+        nameClause = ' AND '.concat(nameClause);
+    }
 
-module.exports.setInterests = (req, res) => {
-  const { idUser, interests } = req.body;
-  db.query(`UPDATE User SET interests = '${interests}' WHERE idUser = '${idUser}';`, (err) => {
-    if (err) {
-        return res.json({
-            success: false,
-            msg: err.message
-        });
+    let query = '';
+    if (!byLoc && !byCat && !byName) {
+        query = 'SELECT * FROM item;';
     } else {
-      return res.json({
-        success: true
-      })
+        query = `SELECT * FROM item WHERE ${locClause}${catClause}${nameClause};`;
     }
-  });
-}
+    console.log(query);
 
-module.exports.logIn = (req, res) => {
-  const { idUser } = req.body;
-  db.query(`UPDATE User SET loggedIn = 1 WHERE idUser = '${idUser}';`, (err) => {
-    if (err) {
-        return res.json({
-            success: false,
-            msg: err.message
-        });
-    } else {
-      return res.json({
-        success: true
-      })
-    }
-  });
-}
+    db.query(query, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                msg: err.message
+            });
+        }
+        const jsonResult = result.map(obj => Object.assign({}, obj));
+        console.log(jsonResult);
+        if (result.length > 0) {
+            return res.json({
+                success: true,
+                items: jsonResult
+            });
+        } else {
+            return res.json({
+                success: false
+            });
+        }
+    });
+};
 
-module.exports.logOut = (req, res) => {
-  const { idUser } = req.body;
-  db.query(`UPDATE User SET loggedIn = 0 WHERE idUser = '${idUser}';`, (err) => {
-    if (err) {
-        return res.json({
-            success: false,
-            msg: err.message
-        });
-    } else {
-      return res.json({
-        success: true
-      })
-    }
-  });
-}
+// module.exports.getUser = (req, res) => {
+//     const { email } = req.body;
+//     db.query(`SELECT * FROM users WHERE email = '${email}'`, (err, result) => {
+//         if (err) {
+//             return res.json({
+//                 success: false,
+//                 msg: err.message
+//             });
+//         }
+//         console.log(result);
+//         if (result.length > 0) {
+//             console.log('Logged in');
+//             return res.json({
+//                 success: true,
+//             });
+//         } else {
+//             return res.json({
+//                 success: false,
+//                 msg: 'Invalid login'
+//             });
+//         }
+//     });
+// };
+// };
